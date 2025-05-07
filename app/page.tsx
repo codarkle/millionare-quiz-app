@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createCategory, getCategories } from "@/lib/actions"
+import { createCategory, getCategories, updateCategoryEnabledStatus } from "@/lib/actions"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation"
 
 export default function Home() {
   const router = useRouter()
-  const [categories, setCategories] = useState<{ id: number; category: string }[]>([])
+  const [categories, setCategories] = useState<{ id: number; category: string; isEnabled: boolean }[]>([])
   const [newCategory, setNewCategory] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [selectedCategories, setSelectedCategories] = useState<number[]>([])
@@ -21,6 +21,11 @@ export default function Home() {
       try {
         const data = await getCategories()
         setCategories(data)
+
+        // Initialize selected categories based on isEnabled flag
+        const enabledCategories = data.filter((category) => category.isEnabled).map((category) => category.id)
+
+        setSelectedCategories(enabledCategories)
         setIsLoading(false)
       } catch (error) {
         console.error("Failed to fetch categories:", error)
@@ -51,14 +56,21 @@ export default function Home() {
     }
   }
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = async () => {
     if (selectedCategories.length === 0) {
       alert("Please select at least one category")
       return
     }
 
-    const categoryParams = selectedCategories.join(",")
-    router.push(`/show?categories=${categoryParams}`)
+    try {
+      // Update the enabled status in the database
+      await updateCategoryEnabledStatus(selectedCategories)
+
+      // Navigate to the show page
+      router.push("/show")
+    } catch (error) {
+      console.error("Failed to update category status:", error)
+    }
   }
 
   return (

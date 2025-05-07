@@ -25,7 +25,8 @@ export async function getDb() {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category TEXT NOT NULL
+      category TEXT NOT NULL,
+      isEnabled BOOLEAN NOT NULL DEFAULT 0
     );
     
     CREATE TABLE IF NOT EXISTS questions (
@@ -43,6 +44,17 @@ export async function getDb() {
       FOREIGN KEY (question_id) REFERENCES questions (id) ON DELETE CASCADE
     );
   `)
+
+  // Check if we need to add the isEnabled column to an existing database
+  const tableInfo = await db.all("PRAGMA table_info(categories)")
+  const hasIsEnabled = tableInfo.some((column) => column.name === "isEnabled")
+
+  if (!hasIsEnabled) {
+    // Add the isEnabled column to existing database
+    await db.exec(`
+      ALTER TABLE categories ADD COLUMN isEnabled BOOLEAN NOT NULL DEFAULT 0;
+    `)
+  }
 
   return db
 }

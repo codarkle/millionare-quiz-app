@@ -18,7 +18,7 @@ export async function getCategory(id: number) {
 
 export async function createCategory(category: string) {
   const db = await getDb()
-  const result = await db.run("INSERT INTO categories (category) VALUES (?)", category)
+  const result = await db.run("INSERT INTO categories (category, isEnabled) VALUES (?, 0)", category)
 
   const newCategory = await db.get("SELECT * FROM categories WHERE id = ?", result.lastID)
 
@@ -41,6 +41,23 @@ export async function deleteCategory(id: number) {
   return { success: true }
 }
 
+// Update category enabled status
+export async function updateCategoryEnabledStatus(categoryIds: number[]) {
+  const db = await getDb()
+
+  // First, disable all categories
+  await db.run("UPDATE categories SET isEnabled = 0")
+
+  // Then enable the selected categories
+  if (categoryIds.length > 0) {
+    const placeholders = categoryIds.map(() => "?").join(",")
+    await db.run(`UPDATE categories SET isEnabled = 1 WHERE id IN (${placeholders})`, ...categoryIds)
+  }
+
+  revalidatePath("/")
+  return { success: true }
+}
+
 // Question actions
 export async function getQuestions(categoryId: number) {
   const db = await getDb()
@@ -57,51 +74,18 @@ export async function getQuestions(categoryId: number) {
   return questionsWithAnswers
 }
 
-// Get all questions from all categories
-export async function getAllQuestions() {
+// Get questions from enabled categories
+export async function getQuestionsFromEnabledCategories() {
   const db = await getDb()
 
-  // Get all questions with their category names
+  // Get questions with their category names from enabled categories
   const questions = await db.all(`
     SELECT q.id, q.question, c.category, q.category_id
     FROM questions q
     JOIN categories c ON q.category_id = c.id
+    WHERE c.isEnabled = 1
     ORDER BY q.id
   `)
-
-  // Get answers for each question
-  const questionsWithAnswers = await Promise.all(
-    questions.map(async (question) => {
-      const answers = await db.all("SELECT * FROM answers WHERE question_id = ? ORDER BY id", question.id)
-      return { ...question, answers }
-    }),
-  )
-
-  return questionsWithAnswers
-}
-
-// Get questions from selected categories
-export async function getQuestionsFromCategories(categoryIds: number[]) {
-  if (categoryIds.length === 0) {
-    return []
-  }
-
-  const db = await getDb()
-
-  // Create placeholders for the SQL IN clause
-  const placeholders = categoryIds.map(() => "?").join(",")
-
-  // Get questions with their category names from selected categories
-  const questions = await db.all(
-    `
-    SELECT q.id, q.question, c.category, q.category_id
-    FROM questions q
-    JOIN categories c ON q.category_id = c.id
-    WHERE q.category_id IN (${placeholders})
-    ORDER BY q.id
-  `,
-    ...categoryIds,
-  )
 
   // Get answers for each question
   const questionsWithAnswers = await Promise.all(
