@@ -4,7 +4,7 @@ import { getDb } from "./db"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import bcrypt from "bcryptjs"
-import { createToken, type UserWithPassword } from "./auth"
+import { createToken, type UserWithPassword, getCurrentUser } from "./auth"
 
 // Auth actions
 export async function login(formData: FormData) {
@@ -120,6 +120,147 @@ export async function signup(formData: FormData) {
 export async function logout() {
   cookies().delete("auth-token")
   return { success: true }
+}
+
+// User profile actions
+export async function updateProfile(formData: FormData) {
+  const currentUser = await getCurrentUser()
+
+  if (!currentUser) {
+    return { error: "You must be logged in to update your profile" }
+  }
+
+  const username = formData.get("username") as string
+  const email = formData.get("email") as string
+  const currentPassword = formData.get("currentPassword") as string
+  const newPassword = formData.get("newPassword") as string
+  const confirmPassword = formData.get("confirmPassword") as string
+
+  if (!username || !email) {
+    return { error: "Username and email are required" }
+  }
+
+  try {
+    const db = await getDb()
+
+    // Check if username or email already exists for another user
+    const existingUser = await db.get(
+      "SELECT * FROM users WHERE (username = ? OR email = ?) AND id != ?",
+      username,
+      email,
+      currentUser.id,
+    )
+
+    if (existingUser) {
+      return { error: "Username or email already exists" }
+    }
+
+    // If changing password, verify current password and check new passwords match
+    if (newPassword) {
+      if (!currentPassword) {
+        return { error: "Current password is required to set a new password" }
+      }
+
+      if (newPassword !== confirmPassword) {
+        return { error: "New passwords do not match" }
+      }
+
+      // Verify current password
+      const user = await db.get<UserWithPassword>("SELECT * FROM users WHERE id = ?", currentUser.id)
+      if (!user) {
+        return { error: "User not found" }
+      }
+
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password)
+      if (!isPasswordValid) {
+        return { error: "Current password is incorrect" }
+      }
+
+      // Update user with new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10)
+      await db.run(
+        "UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?",
+        username,
+        email,
+        hashedPassword,
+        currentUser.id,
+      )
+    } else {
+      // Update user without changing password
+      await db.run("UPDATE users SET username = ?, email = ? WHERE id = ?", username, email, currentUser.id)
+    }
+
+    // Update token with new user info
+    const token = createToken({
+      id: currentUser.id,
+      role: currentUser.role,
+      username,
+      email,
+    })
+
+    // Set cookie
+    cookies().set({
+      name: "auth-token",
+      value: token,
+      httpOnly: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    })
+
+    revalidatePath("/profile")
+    return { success: true }
+  } catch (error) {
+    console.error("Update profile error:", error)
+    return { error: "An error occurred while updating your profile" }
+  }
+}
+
+// Quiz history actions
+export async function saveQuizResult(questionsShown: number, totalQuestions: number) {
+  const currentUser = await getCurrentUser()
+
+  if (!currentUser) {
+    return { error: "You must be logged in to save quiz results" }
+  }
+
+  try {
+    const db = await getDb()
+    const progress = totalQuestions > 0 ? questionsShown / totalQuestions : 0
+
+    await db.run(
+      "INSERT INTO quiz_history (user_id, questions_shown, total_questions, progress) VALUES (?, ?, ?, ?)",
+      currentUser.id,
+      questionsShown,
+      totalQuestions,
+      progress,
+    )
+
+    return { success: true }
+  } catch (error) {
+    console.error("Save quiz result error:", error)
+    return { error: "An error occurred while saving quiz results" }
+  }
+}
+
+export async function getQuizHistory() {
+  const currentUser = await getCurrentUser()
+
+  if (!currentUser) {
+    return []
+  }
+
+  try {
+    const db = await getDb()
+    const history = await db.all(
+      "SELECT * FROM quiz_history WHERE user_id = ? ORDER BY completed_at DESC",
+      currentUser.id,
+    )
+
+    return history
+  } catch (error) {
+    console.error("Get quiz history error:", error)
+    return []
+  }
 }
 
 // User management actions

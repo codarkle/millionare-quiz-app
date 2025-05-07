@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { getQuestionsFromEnabledCategories, logout } from "@/lib/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Play, LogOut } from "lucide-react"
+import { Play, LogOut, User } from "lucide-react"
 
 export default function UserHomePage() {
   const router = useRouter()
@@ -30,6 +30,10 @@ export default function UserHomePage() {
     router.push("/show")
   }
 
+  const handleViewProfile = () => {
+    router.push("/profile")
+  }
+
   const handleLogout = async () => {
     await logout()
     router.push("/login")
@@ -39,10 +43,16 @@ export default function UserHomePage() {
     <main className="container mx-auto p-4 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Quiz App</h1>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleViewProfile}>
+            <User className="h-4 w-4 mr-2" />
+            Profile
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col items-center justify-center py-12">

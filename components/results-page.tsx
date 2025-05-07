@@ -4,14 +4,15 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Home, RotateCcw } from "lucide-react"
-import { logout } from "@/lib/actions"
+import { Home, RotateCcw, User } from "lucide-react"
+import { logout, saveQuizResult } from "@/lib/actions"
 
 export default function ResultsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [questionsShown, setQuestionsShown] = useState(0)
   const [totalQuestions, setTotalQuestions] = useState(0)
+  const [resultSaved, setResultSaved] = useState(false)
 
   useEffect(() => {
     const shown = searchParams.get("shown")
@@ -24,7 +25,17 @@ export default function ResultsPage() {
     if (total) {
       setTotalQuestions(Number.parseInt(total, 10))
     }
-  }, [searchParams])
+
+    // Save the quiz result to the database
+    const saveResult = async () => {
+      if (shown && total && !resultSaved) {
+        await saveQuizResult(Number.parseInt(shown, 10), Number.parseInt(total, 10))
+        setResultSaved(true)
+      }
+    }
+
+    saveResult()
+  }, [searchParams, resultSaved])
 
   const handleReturnHome = () => {
     router.push("/")
@@ -32,6 +43,10 @@ export default function ResultsPage() {
 
   const handleTryAgain = () => {
     router.push("/show")
+  }
+
+  const handleViewProfile = () => {
+    router.push("/profile")
   }
 
   const handleLogout = async () => {
@@ -43,9 +58,15 @@ export default function ResultsPage() {
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Quiz Results</h1>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          Logout
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleViewProfile}>
+            <User className="h-4 w-4 mr-2" />
+            Profile
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-8">

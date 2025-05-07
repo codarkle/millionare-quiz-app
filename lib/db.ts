@@ -53,6 +53,16 @@ export async function getDb() {
       password TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    
+    CREATE TABLE IF NOT EXISTS quiz_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      questions_shown INTEGER NOT NULL,
+      total_questions INTEGER NOT NULL,
+      progress REAL NOT NULL,
+      completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
   `)
 
   // Check if we need to add the isEnabled column to an existing database
