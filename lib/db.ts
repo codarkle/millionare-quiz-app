@@ -3,6 +3,7 @@ import { open, type Database as SQLiteDatabase } from "sqlite"
 import { mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
+import bcrypt from "bcryptjs"
 
 let db: SQLiteDatabase | null = null
 
@@ -43,6 +44,15 @@ export async function getDb() {
       isCorrect BOOLEAN NOT NULL DEFAULT 0,
       FOREIGN KEY (question_id) REFERENCES questions (id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      role TEXT NOT NULL DEFAULT 'user',
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
   `)
 
   // Check if we need to add the isEnabled column to an existing database
@@ -54,6 +64,20 @@ export async function getDb() {
     await db.exec(`
       ALTER TABLE categories ADD COLUMN isEnabled BOOLEAN NOT NULL DEFAULT 0;
     `)
+  }
+
+  // Create admin user if it doesn't exist
+  const adminExists = await db.get("SELECT * FROM users WHERE username = 'admin'")
+  if (!adminExists) {
+    const hashedPassword = await bcrypt.hash("admin123", 10)
+    await db.run(
+      "INSERT INTO users (role, username, email, password) VALUES (?, ?, ?, ?)",
+      "administrator",
+      "admin",
+      "admin@example.com",
+      hashedPassword,
+    )
+    console.log("Admin user created")
   }
 
   return db
