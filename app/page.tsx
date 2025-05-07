@@ -5,6 +5,7 @@ import { createCategory, getCategories } from "@/lib/actions"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Play } from "lucide-react"
 
 export default function Home() {
   const [categories, setCategories] = useState<{ id: number; category: string }[]>([])
@@ -51,6 +52,15 @@ export default function Home() {
           className="max-w-xs"
         />
         <Button onClick={handleCreateCategory}>Create</Button>
+      </div>
+
+      <div className="flex justify-center mb-8">
+        <Link href="/show">
+          <Button size="lg" className="px-8">
+            <Play className="h-5 w-5 mr-2" />
+            Start Quiz
+          </Button>
+        </Link>
       </div>
 
       <h2 className="text-xl font-semibold mb-4">Categories</h2>

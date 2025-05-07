@@ -57,6 +57,29 @@ export async function getQuestions(categoryId: number) {
   return questionsWithAnswers
 }
 
+// Get all questions from all categories
+export async function getAllQuestions() {
+  const db = await getDb()
+
+  // Get all questions with their category names
+  const questions = await db.all(`
+    SELECT q.id, q.question, c.category, q.category_id
+    FROM questions q
+    JOIN categories c ON q.category_id = c.id
+    ORDER BY q.id
+  `)
+
+  // Get answers for each question
+  const questionsWithAnswers = await Promise.all(
+    questions.map(async (question) => {
+      const answers = await db.all("SELECT * FROM answers WHERE question_id = ? ORDER BY id", question.id)
+      return { ...question, answers }
+    }),
+  )
+
+  return questionsWithAnswers
+}
+
 export async function createQuestion(
   categoryId: number,
   question: string,
