@@ -29,6 +29,7 @@ export default function ShowQuiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showingAnswer, setShowingAnswer] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,13 +46,20 @@ export default function ShowQuiz() {
     fetchData()
   }, [])
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
-      setSelectedAnswer(null)
+  const handleButtonClick = () => {
+    if (showingAnswer) {
+      // If we're showing the answer, move to the next question
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1)
+        setSelectedAnswer(null)
+        setShowingAnswer(false)
+      } else {
+        alert("Quiz completed!")
+        router.push("/")
+      }
     } else {
-      alert("Finish!")
-      router.push("/")
+      // If we're not showing the answer, show it
+      setShowingAnswer(true)
     }
   }
 
@@ -115,10 +123,17 @@ export default function ShowQuiz() {
             {currentQuestion.answers.map((answer) => (
               <div
                 key={answer.id}
-                className="flex items-center space-x-2 border p-4 rounded-md hover:bg-gray-50 transition-colors"
+                className={`flex items-center space-x-2 border p-4 rounded-md hover:bg-gray-50 transition-colors ${
+                  showingAnswer && answer.isCorrect ? "bg-green-100 border-green-500" : ""
+                }`}
               >
                 <RadioGroupItem value={answer.id.toString()} id={`answer-${answer.id}`} />
-                <Label htmlFor={`answer-${answer.id}`} className="flex-grow cursor-pointer">
+                <Label
+                  htmlFor={`answer-${answer.id}`}
+                  className={`flex-grow cursor-pointer ${
+                    showingAnswer && answer.isCorrect ? "font-bold text-green-700" : ""
+                  }`}
+                >
                   {answer.answer}
                 </Label>
               </div>
@@ -129,8 +144,12 @@ export default function ShowQuiz() {
           <Button variant="outline" onClick={() => router.push("/")}>
             Back to Home
           </Button>
-          <Button onClick={handleNextQuestion}>
-            {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Finish Quiz"}
+          <Button onClick={handleButtonClick}>
+            {showingAnswer
+              ? currentQuestionIndex < questions.length - 1
+                ? "Next Question"
+                : "Finish Quiz"
+              : "Show Correct Answer"}
           </Button>
         </CardFooter>
       </Card>
