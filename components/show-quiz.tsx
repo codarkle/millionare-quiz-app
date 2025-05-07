@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { LogOut } from "lucide-react"
+import { LogOut, DoorOpen } from "lucide-react"
 
 type Answer = {
   id: number
@@ -54,13 +54,18 @@ export default function ShowQuiz() {
         setSelectedAnswer(null)
         setShowingAnswer(false)
       } else {
-        alert("Quiz completed!")
-        router.push("/")
+        // Navigate to results page with all questions completed
+        router.push(`/results?shown=${questions.length}&total=${questions.length}`)
       }
     } else {
       // If we're not showing the answer, show it
       setShowingAnswer(true)
     }
+  }
+
+  const handleWalkAway = () => {
+    // Navigate to results page with current progress
+    router.push(`/results?shown=${currentQuestionIndex}&total=${questions.length}`)
   }
 
   const handleLogout = async () => {
@@ -141,8 +146,9 @@ export default function ShowQuiz() {
           </RadioGroup>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/")}>
-            Back to Home
+          <Button variant="outline" onClick={handleWalkAway}>
+            <DoorOpen className="h-4 w-4 mr-2" />
+            Walk Away
           </Button>
           <Button onClick={handleButtonClick}>
             {showingAnswer
