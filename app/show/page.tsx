@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { getAllQuestions } from "@/lib/actions"
+import { useRouter, useSearchParams } from "next/navigation"
+import { getQuestionsFromCategories } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -23,6 +23,8 @@ type Question = {
 
 export default function ShowPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const categoriesParam = searchParams.get("categories")
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -32,7 +34,13 @@ export default function ShowPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const questionsData = await getAllQuestions()
+        if (!categoriesParam) {
+          router.push("/")
+          return
+        }
+
+        const categoryIds = categoriesParam.split(",").map((id) => Number.parseInt(id))
+        const questionsData = await getQuestionsFromCategories(categoryIds)
         setQuestions(questionsData)
         setIsLoading(false)
       } catch (error) {
@@ -42,7 +50,7 @@ export default function ShowPage() {
     }
 
     fetchData()
-  }, [])
+  }, [categoriesParam, router])
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -70,7 +78,7 @@ export default function ShowPage() {
             <CardTitle>No Questions</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>There are no questions available. Please create some questions first.</p>
+            <p>There are no questions available in the selected categories. Please create some questions first.</p>
           </CardContent>
           <CardFooter>
             <Button onClick={() => router.push("/")}>Back to Home</Button>
