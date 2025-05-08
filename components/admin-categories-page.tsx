@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, Trophy } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 
 export default function AdminCategoriesPage() {
@@ -75,6 +75,10 @@ export default function AdminCategoriesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => router.push("/admin/challenge")}>
+            <Trophy className="h-4 w-4 mr-2" />
+            Challenge Mode
+          </Button>
           <Button variant="outline" size="sm" onClick={() => router.push("/admin/users")}>
             <User className="h-4 w-4 mr-2" />
             Manage Users
