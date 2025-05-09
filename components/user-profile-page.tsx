@@ -4,13 +4,13 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { updateProfile, getQuizHistory, logout } from "@/lib/actions"
+import { updateProfile, getQuizHistory } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, LogOut, Home } from "lucide-react"
+import { AlertCircle, Home } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { User } from "@/lib/auth"
 
@@ -92,11 +92,6 @@ export default function UserProfilePage({ user }: { user: User }) {
     setIsLoading(false)
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.push("/login")
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat("en-US", {
@@ -117,18 +112,59 @@ export default function UserProfilePage({ user }: { user: User }) {
             <Home className="h-4 w-4 mr-2" />
             Home
           </Button>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue="history" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="history">Quiz History</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="history">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {historyLoading ? (
+                <p>Loading quiz history...</p>
+              ) : quizHistory.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  You haven't taken any quizzes yet. Start a quiz to see your history.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {quizHistory.map((item) => (
+                    <div key={item.id} className="border rounded-md p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium">
+                            Completed {item.questions_shown} of {item.total_questions} questions
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{formatDate(item.completed_at)}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-block px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                            {Math.round(item.progress * 100)}% complete
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${item.progress * 100}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full" onClick={() => router.push("/")}>
+                Take a New Quiz
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="profile">
           <Card>
@@ -202,51 +238,6 @@ export default function UserProfilePage({ user }: { user: User }) {
                 </Button>
               </form>
             </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quiz History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {historyLoading ? (
-                <p>Loading quiz history...</p>
-              ) : quizHistory.length === 0 ? (
-                <p className="text-center py-8 text-muted-foreground">
-                  You haven't taken any quizzes yet. Start a quiz to see your history.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {quizHistory.map((item) => (
-                    <div key={item.id} className="border rounded-md p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-medium">
-                            Completed {item.questions_shown} of {item.total_questions} questions
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{formatDate(item.completed_at)}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-block px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
-                            {Math.round(item.progress * 100)}% complete
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-primary h-2 rounded-full" style={{ width: `${item.progress * 100}%` }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full" onClick={() => router.push("/")}>
-                Take a New Quiz
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

@@ -10,7 +10,7 @@ export default async function Home() {
   }
 
   if (user.role === "administrator") {
-    redirect("/admin/categories")
+    redirect("/admin")
   }
 
   return <UserHomePage />

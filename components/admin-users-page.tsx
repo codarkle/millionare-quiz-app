@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getUsers, createUser, updateUser, deleteUser, logout } from "@/lib/actions"
+import { getUsers, createUser, updateUser, deleteUser } from "@/lib/actions"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2, Edit, LogOut, LayoutGrid } from "lucide-react"
+import { Trash2, Edit, Home } from "lucide-react"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -159,11 +159,6 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.push("/login")
-  }
-
   if (isLoading) {
     return <div className="container mx-auto p-4">Loading...</div>
   }
@@ -173,13 +168,9 @@ export default function AdminUsersPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Management</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push("/admin/categories")}>
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            Categories
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+          <Button variant="outline" size="sm" onClick={() => router.push("/admin")}>
+            <Home className="h-4 w-4 mr-2" />
+            Home
           </Button>
         </div>
       </div>

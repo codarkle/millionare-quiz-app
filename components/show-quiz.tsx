@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getQuestionsFromEnabledCategories, logout } from "@/lib/actions"
+import { getQuestionsFromEnabledCategories } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import Image from "next/image"
+import { Message } from "@/components/ui/message"
+
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { LogOut, DoorOpen } from "lucide-react"
 
 type Answer = {
   id: number
@@ -27,10 +27,22 @@ export default function ShowQuiz() {
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showingAnswer, setShowingAnswer] = useState(false)
+  const [message, setMessage] = useState<{ text: string; type: "info" | "success" | "warning" | "error" } | null>(null)
+  const [shuffledAnswers, setShuffledAnswers] = useState<Answer[]>([])
+  const [removedAnswers, setRemovedAnswers] = useState<number[]>([])
 
+  const [lifelines, setLifelines] = useState({
+    fiftyFifty: true,
+    askAudience: true,
+    phoneAFriend: true,
+    switch: true,
+    double: true,
+  })
+
+  const prizeValues = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 125000, 250000, 500000, 1000000]
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,16 +58,36 @@ export default function ShowQuiz() {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    if (questions.length > 0 && currentQuestionIndex < questions.length) {
+      // Shuffle answers when question changes
+      const answers = [...questions[currentQuestionIndex].answers]
+      shuffleArray(answers)
+      setShuffledAnswers(answers)
+      setRemovedAnswers([])
+    }
+  }, [questions, currentQuestionIndex])
+
+  const currentQuestion = questions[currentQuestionIndex]
+  
+  // Fisher-Yates shuffle algorithm
+  const shuffleArray = (array: any[]) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[array[i], array[j]] = [array[j], array[i]]
+    }
+    return array
+  }
+
   const handleButtonClick = () => {
     if (showingAnswer) {
       // If we're showing the answer, move to the next question
-      if (currentQuestionIndex < questions.length - 1) {
+      if (currentQuestionIndex < questions.length - 1  && currentQuestionIndex < 14) {
         setCurrentQuestionIndex(currentQuestionIndex + 1)
-        setSelectedAnswer(null)
         setShowingAnswer(false)
       } else {
-        // Navigate to results page with all questions completed
-        router.push(`/results?shown=${questions.length}&total=${questions.length}`)
+        // Navigate to results page with all questions completed 
+        router.push(`/results?shown=${currentQuestionIndex}&result=win`)   
       }
     } else {
       // If we're not showing the answer, show it
@@ -65,13 +97,77 @@ export default function ShowQuiz() {
 
   const handleWalkAway = () => {
     // Navigate to results page with current progress
-    router.push(`/results?shown=${currentQuestionIndex}&total=${questions.length}`)
+    router.push(`/results?shown=${currentQuestionIndex}&result=walk`)
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.push("/login")
+  const handleUseLifeline = (lifeline: keyof typeof lifelines) => {
+    if (!lifelines[lifeline]) return
+
+    setLifelines((prev) => ({
+      ...prev,
+      [lifeline]: false,
+    }))
+
+    switch (lifeline) {
+      case "fiftyFifty":
+        // Remove two incorrect answers
+        if (!currentQuestion) return
+
+        const incorrectAnswers = shuffledAnswers
+          .filter((answer) => !answer.isCorrect)
+          .map((answer) => answer.id)
+
+        shuffleArray(incorrectAnswers)
+        const toRemove = incorrectAnswers.slice(0, 2)
+        setRemovedAnswers(toRemove)
+        break
+
+      case "askAudience":
+        // Show audience poll
+        const correctAnswer = shuffledAnswers.find((answer) => answer.isCorrect)
+        setMessage({
+          text: `The audience thinks the answer is: ${correctAnswer?.answer}`,
+          type: "info"
+        })
+        break
+
+      case "phoneAFriend":
+        // Show phone a friend hint
+        const friendAnswer = shuffledAnswers.find((answer) => answer.isCorrect)
+        setMessage({
+          text: `Your friend says: I think the answer is ${friendAnswer?.answer}`,
+          type: "info"
+        })
+        break
+
+      case "switch":
+        // Switch to a different question
+        if (questions.length <= currentQuestionIndex + 1) {
+          setMessage({
+            text: "No more questions available to switch to!",
+            type: "error"
+          })
+          return
+        }
+
+        // Move to next question without changing prize level
+        setQuestions(prev => prev.slice(1));
+        setShowingAnswer(false);
+        break
+      case "double":
+        if (questions.length <= currentQuestionIndex + 1) {
+          setMessage({
+            text: "No more questions available to switch to!",
+            type: "error"
+          })
+          return
+        }
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setShowingAnswer(false);
+        break
+    }
   }
+
 
   if (isLoading) {
     return (
@@ -89,7 +185,7 @@ export default function ShowQuiz() {
             <CardTitle>No Questions</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>There are no questions available in the enabled categories. Please select different categories.</p>
+            <p>There are no questions.</p>
           </CardContent>
           <CardFooter>
             <Button onClick={() => router.push("/")}>Back to Home</Button>
@@ -99,73 +195,116 @@ export default function ShowQuiz() {
     )
   }
 
-  const currentQuestion = questions[currentQuestionIndex]
+
 
   return (
-    <main className="container mx-auto p-4 max-w-4xl">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Quiz</h1>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            Question {currentQuestionIndex + 1} of {questions.length}
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1 flex">
+        {message && (
+          <Message
+            message={message.text}
+            type={message.type}
+            onClose={() => setMessage(null)}
+            duration={5000}
+          />
+        )}
+        
+        {/* Left Column with Background Image */}
+        <div className="w-[80%] flex millionaire-bg" style={{ backgroundImage: "url('/image/play.jpg')" }}>
+          {/* Lifelines */}
+          <div className="w-1/6 flex flex-col items-center justify-center gap-4">
+            <div
+              className={`lifeline ${!lifelines.fiftyFifty ? "used" : ""}`}
+              onClick={() => handleUseLifeline("fiftyFifty")}
+            >
+              <Image src="/image/5050.jpg" alt="50:50" width={60} height={60} className="cursor-pointer" />
+            </div>
+            <div
+              className={`lifeline ${!lifelines.askAudience ? "used" : ""}`}
+              onClick={() => handleUseLifeline("askAudience")}
+            >
+              <Image src="/image/ata.jpg" alt="Ask the Audience" width={60} height={60} className="cursor-pointer" />
+            </div>
+            <div
+              className={`lifeline ${!lifelines.phoneAFriend ? "used" : ""}`}
+              onClick={() => handleUseLifeline("phoneAFriend")}
+            >
+              <Image src="/image/paf.jpg" alt="Phone a Friend" width={60} height={60} className="cursor-pointer" />
+            </div>
+            <div className={`lifeline ${!lifelines.switch ? "used" : ""}`} 
+              onClick={() => handleUseLifeline("switch")
+            }>
+              <Image src="/image/switch.jpg" alt="Switch" width={60} height={60} className="cursor-pointer" />
+            </div>
+            <div className={`lifeline ${!lifelines.double ? "used" : ""}`}
+              onClick={()=>handleUseLifeline("double")}
+            >
+              <Image src="/image/double.jpg" alt="Double Dip" width={60} height={60} className="cursor-pointer" />
+            </div>
+            <Button variant="destructive" onClick={handleWalkAway}>
+                Walk Away
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+
+          {/* Question and Answers */}
+          <div className="w-4/6 flex flex-col items-center justify-center p-4" style={{ marginTop: "15%" }}>
+            <div className="bg-black/70 rounded-lg p-6 mb-6 max-w-3xl w-full">
+              <h2 className="text-xl font-bold text-center mb-4">Question {currentQuestionIndex + 1}</h2>
+              <p className="text-lg text-center mb-8">{currentQuestion.question}</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {shuffledAnswers.map((answer, index) => {
+                  const isRemoved = removedAnswers.includes(Number(answer.id))
+                  const letterLabel = String.fromCharCode(65 + index)
+
+                  return (
+                    <div
+                      key={answer.id}
+                      className={`answer-option ${showingAnswer && answer.isCorrect ? "correct" : ""} 
+                       ${isRemoved ? "opacity-0 pointer-events-none" : ""}`}
+                    >
+                      {letterLabel}: {answer.answer}
+                    </div>
+                  )
+                })}
+              </div>
+            </div> 
+          </div>
+
+          {/* Next or Walk away */}
+          <div className="w-1/6 flex flex-col items-center justify-center pt-8">
+              <Button onClick={handleButtonClick}>
+              {showingAnswer
+                ? currentQuestionIndex < 14
+                  ? "Next"
+                  : "Finish"
+                : "Answer"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Column with Dark Background */}
+        <div className="w-[20%] bg-slate-900 p-4">
+          <div className="prize-ladder h-full flex flex-col justify-between">
+            {prizeValues
+              .slice()
+              .reverse()
+              .map((prize, index) => {
+                const questionIndex = 14 - index
+                return (
+                  <div
+                    key={index}
+                    className={`prize-ladder-item ${currentQuestionIndex === questionIndex ? "active" : ""} ${
+                      questionIndex === 4 || questionIndex === 9 || questionIndex === 14 ? "milestone" : ""
+                    }`}
+                  >
+                    ${prize.toLocaleString()}
+                  </div>
+                )
+              })}
+          </div>
         </div>
       </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex flex-col gap-2">
-            <div className="text-sm text-muted-foreground">Category: {currentQuestion.category}</div>
-            <CardTitle>{currentQuestion.question}</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup value={selectedAnswer || ""} onValueChange={setSelectedAnswer} className="space-y-4">
-            {currentQuestion.answers.map((answer) => (
-              <div
-                key={answer.id}
-                className={`flex items-center space-x-2 border p-4 rounded-md hover:bg-gray-50 transition-colors ${
-                  showingAnswer && answer.isCorrect ? "bg-green-100 border-green-500" : ""
-                }`}
-              >
-                <RadioGroupItem value={answer.id.toString()} id={`answer-${answer.id}`} />
-                <Label
-                  htmlFor={`answer-${answer.id}`}
-                  className={`flex-grow cursor-pointer ${
-                    showingAnswer && answer.isCorrect ? "font-bold text-green-700" : ""
-                  }`}
-                >
-                  {answer.answer}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleWalkAway}>
-            <DoorOpen className="h-4 w-4 mr-2" />
-            Walk Away
-          </Button>
-          <Button onClick={handleButtonClick}>
-            {showingAnswer
-              ? currentQuestionIndex < questions.length - 1
-                ? "Next Question"
-                : "Finish Quiz"
-              : "Show Correct Answer"}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <div className="w-full bg-gray-200 rounded-full h-2.5">
-        <div
-          className="bg-primary h-2.5 rounded-full transition-all duration-300"
-          style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-        ></div>
-      </div>
-    </main>
-  )
+    </div>
+  )  
 }

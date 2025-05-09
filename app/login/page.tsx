@@ -32,7 +32,7 @@ export default function LoginPage() {
     } else {
       // Redirect based on role
       if (result.role === "administrator") {
-        router.push("/admin/categories")
+        router.push("/admin/")
       } else {
         router.push("/")
       }

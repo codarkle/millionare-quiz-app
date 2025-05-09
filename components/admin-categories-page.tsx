@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LogOut, User, Trophy } from "lucide-react"
+import { Home } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 
 export default function AdminCategoriesPage() {
@@ -73,19 +73,11 @@ export default function AdminCategoriesPage() {
   return (
     <main className="container mx-auto p-4 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold">Question Management</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push("/admin/challenge")}>
-            <Trophy className="h-4 w-4 mr-2" />
-            Challenge Mode
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => router.push("/admin/users")}>
-            <User className="h-4 w-4 mr-2" />
-            Manage Users
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+          <Button variant="outline" size="sm" onClick={() => router.push("/admin")}>
+            <Home className="h-4 w-4 mr-2" />
+            Home
           </Button>
         </div>
       </div>

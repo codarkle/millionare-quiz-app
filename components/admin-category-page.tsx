@@ -9,13 +9,12 @@ import {
   createQuestion,
   updateQuestion,
   deleteQuestion,
-  logout,
 } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Trash2, Edit, Save, X, LogOut } from "lucide-react"
+import { Trash2, Edit, Save, X } from "lucide-react"
 
 type Answer = {
   id: number
@@ -150,11 +149,6 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
     setNewQuestion({ ...newQuestion, answers: updatedAnswers })
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.push("/login")
-  }
-
   if (isLoading) {
     return <div className="container mx-auto p-4">Loading...</div>
   }
@@ -164,10 +158,6 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
       <div className="flex justify-between items-center mb-4">
         <Button variant="outline" onClick={() => router.push("/admin/categories")} className="mb-4">
           Back to Categories
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
         </Button>
       </div>
 
