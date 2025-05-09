@@ -43,7 +43,7 @@ export default function HelpPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div className="flex items-start gap-4 bg-slate-800/70 p-4 rounded-lg">
-                  <Image src="/image/5050.jpg" alt="50:50" width={60} height={60} />
+                  <Image src="/image/5050.jpg" alt="50:50" width={60} height={60} className="rounded-full"/>
                   <div>
                     <h3 className="text-xl font-bold mb-2">50:50</h3>
                     <p>Removes two incorrect answers, leaving the correct answer and one incorrect answer.</p>
@@ -51,7 +51,7 @@ export default function HelpPage() {
                 </div>
 
                 <div className="flex items-start gap-4 bg-slate-800/70 p-4 rounded-lg">
-                  <Image src="/image/paf.jpg" alt="Phone a Friend" width={60} height={60} />
+                  <Image src="/image/paf.jpg" alt="Phone a Friend" width={60} height={60}  className="rounded-full"/>
                   <div>
                     <h3 className="text-xl font-bold mb-2">Phone a Friend</h3>
                     <p>Call someone for help. They have 30 seconds to provide their input on the question.</p>
@@ -59,7 +59,7 @@ export default function HelpPage() {
                 </div>
 
                 <div className="flex items-start gap-4 bg-slate-800/70 p-4 rounded-lg">
-                  <Image src="/image/ata.jpg" alt="Ask the Audience" width={60} height={60} />
+                  <Image src="/image/ata.jpg" alt="Ask the Audience" width={60} height={60}  className="rounded-full"/>
                   <div>
                     <h3 className="text-xl font-bold mb-2">Ask the Audience</h3>
                     <p>Poll the studio audience. A graph will show the percentage of audience votes for each answer.</p>
@@ -67,7 +67,7 @@ export default function HelpPage() {
                 </div>
 
                 <div className="flex items-start gap-4 bg-slate-800/70 p-4 rounded-lg">
-                  <Image src="/image/switch.jpg" alt="Switch the Question" width={60} height={60} />
+                  <Image src="/image/switch.jpg" alt="Switch the Question" width={60} height={60} className="rounded-full" />
                   <div>
                     <h3 className="text-xl font-bold mb-2">Switch the Question</h3>
                     <p>
@@ -78,7 +78,7 @@ export default function HelpPage() {
                 </div>
 
                 <div className="flex items-start gap-4 bg-slate-800/70 p-4 rounded-lg md:col-span-2">
-                  <Image src="/image/double.jpg" alt="Double Dip" width={60} height={60} />
+                  <Image src="/image/double.jpg" alt="Double Dip" width={60} height={60} className="rounded-full" />
                   <div>
                     <h3 className="text-xl font-bold mb-2">Double Dip</h3>
                     <p>

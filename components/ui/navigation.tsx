@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { logout } from "@/lib/actions"
 import { LogOut, HelpCircle, User } from "lucide-react"

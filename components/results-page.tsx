@@ -1,37 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import { saveQuizResult } from "@/lib/actions"
 
 export default function ResultsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [prize, setPrize] = useState(0)
-  const [resultSaved, setResultSaved] = useState(false)
   const result = searchParams.get("result") || "lose"
-
-  const prizeValues = [100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 125000, 250000, 500000, 1000000]
-
-  useEffect(() => {
-    const shown = searchParams.get("shown")
-
-    if (shown) {
-      setPrize(prizeValues[Number.parseInt(shown, 10)])
-    }
-
-    // Save the quiz result to the database
-    const saveResult = async () => {
-      if (shown && !resultSaved) {
-        await saveQuizResult(Number.parseInt(shown, 10), 15)
-        setResultSaved(true)
-      }
-    }
-
-    saveResult()
-  }, [searchParams, resultSaved])
+  const prize = Number.parseInt(searchParams.get("prize") || "0")
 
   const handleReturnHome = () => {
     router.push("/")

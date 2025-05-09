@@ -263,6 +263,40 @@ export async function getQuizHistory() {
   }
 }
 
+
+// Add this new function to delete quiz history items
+export async function deleteQuizHistoryItems(historyIds: number[]) {
+  const currentUser = await getCurrentUser()
+
+  if (!currentUser) {
+    return { error: "You must be logged in to delete quiz history" }
+  }
+
+  if (historyIds.length === 0) {
+    return { error: "No items selected for deletion" }
+  }
+
+  try {
+    const db = await getDb()
+
+    // Create placeholders for the SQL query
+    const placeholders = historyIds.map(() => "?").join(",")
+
+    // Delete the selected history items, ensuring they belong to the current user
+    await db.run(
+      `DELETE FROM quiz_history WHERE id IN (${placeholders}) AND user_id = ?`,
+      ...historyIds,
+      currentUser.id,
+    )
+
+    revalidatePath("/profile")
+    return { success: true }
+  } catch (error) {
+    console.error("Delete quiz history error:", error)
+    return { error: "An error occurred while deleting quiz history" }
+  }
+}
+
 // User management actions
 export async function getUsers() {
   const db = await getDb()

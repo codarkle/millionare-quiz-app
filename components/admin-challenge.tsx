@@ -6,7 +6,6 @@ import { getQuestionsFromEnabledCategories } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { Message } from "@/components/ui/message"
-import { saveQuizResult } from "@/lib/actions"
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -80,17 +79,7 @@ export default function ShowQuiz() {
     return array
   }
 
-  const handleShowResult = async () => {
-    await saveQuizResult(currentQuestionIndex+1, 15)
-    if(currentQuestionIndex < 14){
-      router.push(`/results?prize=${prizeValues[currentQuestionIndex]}&result=walk`)
-    }
-    else{
-      router.push(`/results?prize=${prizeValues[currentQuestionIndex]}&result=win`)
-    }
-  }
-
-  const handleButtonClick = async () => {
+  const handleButtonClick = () => {
     if (showingAnswer) {
       // If we're showing the answer, move to the next question
       if (currentQuestionIndex < questions.length - 1  && currentQuestionIndex < 14) {
@@ -98,20 +87,25 @@ export default function ShowQuiz() {
         setShowingAnswer(false)
       } else {
         // Navigate to results page with all questions completed 
-        handleShowResult();
+        router.push(`/results?prize=${prizeValues[currentQuestionIndex]}&result=win`)   
       }
     } else {
       // If we're not showing the answer, show it
       setShowingAnswer(true)
     }
-  } 
+  }
+
+  const handleWalkAway = () => {
+    // Navigate to results page with current progress
+    router.push(`/results?prize=${prizeValues[currentQuestionIndex]}&result=walk`)
+  }
 
   const handleUseLifeline = (lifeline: keyof typeof lifelines) => {
     if (!lifelines[lifeline]) return
 
     setLifelines((prev) => ({
       ...prev,
-      [lifeline]: false,
+      [lifeline]: true,
     }))
 
     switch (lifeline) {
@@ -247,7 +241,7 @@ export default function ShowQuiz() {
             >
               <Image src="/image/double.jpg" alt="Double Dip" width={60} height={60} className="cursor-pointer rounded-full" />
             </div>
-            <Button variant="destructive" onClick={handleShowResult}>
+            <Button variant="destructive" onClick={handleWalkAway}>
                 Walk Away
             </Button>
           </div>

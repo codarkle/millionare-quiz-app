@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Who Wants To Be A Millionaire",
   description: "A quiz game based on the popular TV show",
-  generator: 'v0.dev'
+  generator: 'WWTBAM'
 }
 
 export default function RootLayout({

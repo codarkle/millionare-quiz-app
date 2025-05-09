@@ -4,14 +4,16 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { updateProfile, getQuizHistory } from "@/lib/actions"
+import { updateProfile, getQuizHistory, logout, deleteQuizHistoryItems } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, Home } from "lucide-react"
+import { AlertCircle, LogOut, Home, Trash2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox"
+import Image from "next/image"
 import type { User } from "@/lib/auth"
 
 type QuizHistoryItem = {
@@ -37,6 +39,8 @@ export default function UserProfilePage({ user }: { user: User }) {
   const [isLoading, setIsLoading] = useState(false)
   const [quizHistory, setQuizHistory] = useState<QuizHistoryItem[]>([])
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [selectedItems, setSelectedItems] = useState<number[]>([])
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     const fetchQuizHistory = async () => {
@@ -92,6 +96,11 @@ export default function UserProfilePage({ user }: { user: User }) {
     setIsLoading(false)
   }
 
+  const handleLogout = async () => {
+    await logout()
+    router.push("/login")
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat("en-US", {
@@ -103,6 +112,30 @@ export default function UserProfilePage({ user }: { user: User }) {
     }).format(date)
   }
 
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) return
+
+    if (confirm(`Are you sure you want to delete ${selectedItems.length} selected items?`)) {
+      setDeleteLoading(true)
+      try {
+        const result = await deleteQuizHistoryItems(selectedItems)
+        if (result.error) {
+          setError(result.error)
+        } else {
+          // Remove deleted items from the state
+          setQuizHistory(quizHistory.filter((item) => !selectedItems.includes(item.id)))
+          setSelectedItems([])
+          setSuccess("Selected history items deleted successfully")
+        }
+      } catch (error) {
+        console.error("Failed to delete history items:", error)
+        setError("An error occurred while deleting history items")
+      } finally {
+        setDeleteLoading(false)
+      }
+    }
+  }
+
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="flex justify-between items-center mb-6">
@@ -111,6 +144,10 @@ export default function UserProfilePage({ user }: { user: User }) {
           <Button variant="outline" size="sm" onClick={() => router.push("/")}>
             <Home className="h-4 w-4 mr-2" />
             Home
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
           </Button>
         </div>
       </div>
@@ -134,34 +171,76 @@ export default function UserProfilePage({ user }: { user: User }) {
                   You haven't taken any quizzes yet. Start a quiz to see your history.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {quizHistory.map((item) => (
-                    <div key={item.id} className="border rounded-md p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-medium">
-                            Completed {item.questions_shown} of {item.total_questions} questions
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{formatDate(item.completed_at)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Left side - Image */}
+                  <div className="relative h-[400px] rounded-md overflow-hidden">
+                    <Image
+                      src="/image/intro.jpg"
+                      alt="Quiz"
+                      fill
+                      style={{ objectFit: "cover" }}
+                      className="rounded-md"
+                    />
+                  </div>
+
+                  {/* Right side - Scrollable list */}
+                  <div className="h-[400px] overflow-y-auto pr-2">
+                    <div className="space-y-4">
+                      {quizHistory.map((item) => (
+                        <div key={item.id} className="border rounded-md p-4 flex items-center gap-3">
+                          <Checkbox
+                            id={`select-${item.id}`}
+                            checked={selectedItems.includes(item.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedItems([...selectedItems, item.id])
+                              } else {
+                                setSelectedItems(selectedItems.filter((id) => id !== item.id))
+                              }
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h3 className="font-medium">
+                                  Completed {item.questions_shown} of {item.total_questions} questions
+                                </h3>
+                                <p className="text-sm text-muted-foreground">{formatDate(item.completed_at)}</p>
+                              </div>
+                              <div className="text-right">
+                                <span className="inline-block px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                                  {Math.round(item.progress * 100)}% complete
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-primary h-2 rounded-full"
+                                style={{ width: `${item.progress * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="inline-block px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
-                            {Math.round(item.progress * 100)}% complete
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-primary h-2 rounded-full" style={{ width: `${item.progress * 100}%` }}></div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full" onClick={() => router.push("/")}>
+            <CardFooter className="flex justify-around">
+              <Button variant="outline" onClick={() => router.push("/")}>
                 Take a New Quiz
               </Button>
+              {quizHistory.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteSelected}
+                  disabled={selectedItems.length === 0 || deleteLoading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {deleteLoading ? "Deleting..." : `Delete Selected (${selectedItems.length})`}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         </TabsContent>
@@ -172,19 +251,6 @@ export default function UserProfilePage({ user }: { user: User }) {
               <CardTitle>Edit Profile</CardTitle>
             </CardHeader>
             <CardContent>
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {success && (
-                <Alert className="mb-4 bg-green-50 border-green-500 text-green-700">
-                  <AlertDescription>{success}</AlertDescription>
-                </Alert>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="username">Username</Label>
@@ -240,6 +306,8 @@ export default function UserProfilePage({ user }: { user: User }) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        
       </Tabs>
     </div>
   )

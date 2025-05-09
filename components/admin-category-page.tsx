@@ -65,14 +65,17 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
     fetchData()
   }, [categoryId])
 
-  const handleSaveCategory = async () => {
-    if (!categoryName.trim()) return
-
-    try {
-      await updateCategory(categoryId, categoryName)
-    } catch (error) {
-      console.error("Failed to update category:", error)
+  const handleBackToCategories = async () => {
+    // Save the category name before navigating back
+    if (categoryName.trim()) {
+      try {
+        await updateCategory(categoryId, categoryName)
+      } catch (error) {
+        console.error("Failed to update category:", error)
+      }
     }
+
+    router.push("/admin/categories")
   }
 
   const handleCreateQuestion = async () => {
@@ -154,9 +157,9 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
   }
 
   return (
-    <main className="container mx-auto p-4 max-w-4xl">
+    <main className="container mx-auto p-4 max-w-6xl">
       <div className="flex justify-between items-center mb-4">
-        <Button variant="outline" onClick={() => router.push("/admin/categories")} className="mb-4">
+        <Button variant="outline" onClick={handleBackToCategories} className="mb-4">
           Back to Categories
         </Button>
       </div>
@@ -167,8 +170,8 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
           value={categoryName}
           onChange={(e) => setCategoryName(e.target.value)}
           className="max-w-xs"
+          placeholder="Category Name"
         />
-        <Button onClick={handleSaveCategory}>Save</Button>
         <Button onClick={() => setShowNewQuestionForm(true)} className="ml-auto">
           Create Question
         </Button>
@@ -213,18 +216,18 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
           </div>
 
           <Button onClick={handleCreateQuestion} className="mt-4">
-            Create Question
+            Save
           </Button>
         </div>
       )}
 
-      <div className="grid gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {questions.length === 0 ? (
-          <p>No questions found. Create your first question.</p>
+          <p className="col-span-3">No questions found. Create your first question.</p>
         ) : (
           questions.map((question, questionIndex) => (
-            <div key={question.id} className="border p-4 rounded-md">
-              <div className="flex justify-between items-center mb-4">
+            <div key={question.id} className="border p-4 rounded-md h-full flex flex-col">
+              <div className="flex justify-between items-start mb-4">
                 {editingQuestion === question.id ? (
                   <Input
                     type="text"
@@ -240,7 +243,7 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
                   <h3 className="text-lg font-semibold">{question.question}</h3>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 ml-2 shrink-0">
                   {editingQuestion === question.id ? (
                     <>
                       <Button
@@ -267,7 +270,7 @@ export default function AdminCategoryPage({ categoryId }: { categoryId: number }
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-3 flex-grow">
                 <RadioGroup
                   value={question.answers.findIndex((a) => a.isCorrect).toString()}
                   disabled={editingQuestion !== question.id}
