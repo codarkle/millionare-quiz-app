@@ -28,6 +28,7 @@ export default function ShowQuiz() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [doubleUsing, setDoubleUsing] = useState(false)
   const [showingAnswer, setShowingAnswer] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "info" | "success" | "warning" | "error" } | null>(null)
   const [shuffledAnswers, setShuffledAnswers] = useState<Answer[]>([])
@@ -83,7 +84,13 @@ export default function ShowQuiz() {
     if (showingAnswer) {
       // If we're showing the answer, move to the next question
       if (currentQuestionIndex < questions.length - 1  && currentQuestionIndex < 14) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1)
+        if(doubleUsing){
+          setCurrentQuestionIndex(currentQuestionIndex + 2)  
+          setDoubleUsing(false)
+        }
+        else{
+          setCurrentQuestionIndex(currentQuestionIndex + 1)
+        }
         setShowingAnswer(false)
       } else {
         // Navigate to results page with all questions completed 
@@ -198,7 +205,7 @@ export default function ShowQuiz() {
 
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col millionaire-bg"  style={{ backgroundImage: "url('/image/stage.jpg')"}}>
       <div className="flex-1 flex">
         {message && (
           <Message
@@ -210,7 +217,7 @@ export default function ShowQuiz() {
         )}
         
         {/* Left Column with Background Image */}
-        <div className="w-[80%] flex millionaire-bg" style={{ backgroundImage: "url('/image/play.jpg')" }}>
+        <div className="w-[80%] flex">
           {/* Lifelines */}
           <div className="w-1/6 flex flex-col items-center justify-center gap-4">
             <div
@@ -237,7 +244,7 @@ export default function ShowQuiz() {
               <Image src="/image/switch.jpg" alt="Switch" width={60} height={60} className="cursor-pointer rounded-full" />
             </div>
             <div className={`lifeline ${!lifelines.double ? "used" : ""}`}
-              onClick={()=>handleUseLifeline("double")}
+              onClick={()=>{handleUseLifeline("double");setDoubleUsing(true)}}
             >
               <Image src="/image/double.jpg" alt="Double Dip" width={60} height={60} className="cursor-pointer rounded-full" />
             </div>
@@ -249,7 +256,7 @@ export default function ShowQuiz() {
           {/* Question and Answers */}
           <div className="w-4/6 flex flex-col items-center justify-center p-4" style={{ marginTop: "5%" }}>
             <div className="bg-black/70 rounded-lg p-6 mb-6 max-w-3xl w-full">
-              <h2 className="text-xl font-bold text-center mb-8">Question {currentQuestionIndex + 1}  ( {currentQuestion.category} )</h2>
+              <h2 className="text-xl font-bold text-center mb-8">Question {currentQuestionIndex + 1}  ( {currentQuestion.category} ) {doubleUsing? "X 2":""}</h2>
               <p className="text-lg text-center mb-8">{currentQuestion.question}</p>
 
               <div className="grid grid-cols-2 gap-3">
@@ -277,7 +284,7 @@ export default function ShowQuiz() {
               {showingAnswer
                 ? currentQuestionIndex < 14
                   ? "Next"
-                  : "Finish"
+                  : "Million$"
                 : "Answer"}
             </Button>
           </div>
@@ -294,10 +301,10 @@ export default function ShowQuiz() {
                 return (
                   <div
                     key={index}
-                    className={`prize-ladder-item ${currentQuestionIndex === questionIndex ? "active" : ""} ${
-                      questionIndex === 4 || questionIndex === 9 || questionIndex === 14 ? "milestone" : ""
-                    }`}
-                  >
+                    className={`prize-ladder-item 
+                    ${currentQuestionIndex === questionIndex ? "active" : ""} 
+                    ${questionIndex === 4 || questionIndex === 9 || questionIndex === 14 ? "milestone" : ""}
+                    `}>
                     ${prize.toLocaleString()}
                   </div>
                 )
