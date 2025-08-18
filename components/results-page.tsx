@@ -62,7 +62,7 @@ export default function ResultsPage() {
             <h2 className="text-2xl font-bold text-white mb-8">Better luck next time!</h2>
           )}
 
-          <div className="flex flex-col gap-4 mt-8 items-center">
+          <div className="flex gap-4 mt-8 justify-center align-middle mx-auto">
               <Button variant="outline" size="lg" className="w-48 h-14 text-xl" onClick={handleReturnHome}>
                 Home
               </Button>

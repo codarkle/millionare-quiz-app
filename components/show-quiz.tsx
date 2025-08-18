@@ -30,12 +30,21 @@ export default function ShowQuiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [showingAnswer, setShowingAnswer] = useState(false)
-  const [selected, setSelected] = useState(false)
-  const [doubleUsing, setDoubleUsing] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "info" | "success" | "warning" | "error" } | null>(null)
   const [shuffledAnswers, setShuffledAnswers] = useState<Answer[]>([])
   const [removedAnswers, setRemovedAnswers] = useState<number[]>([])
-  const [selectedAnswer, setSelectedAnswer] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState<Answer | null>(null)
+
+  const handleAnswerClick = (answer: Answer) => {
+    setSelectedAnswer(answer)
+  
+    if (answer.isCorrect) {
+      setShowingAnswer(true) // highlight correct answer
+    } else {
+      // Wrong answer → end the game immediately
+      router.push(`/results?prize=${currentQuestionIndex > 0 ? prizeValues[currentQuestionIndex - 1] : 0}&result=lose`)
+    }
+  }
 
   const [lifelines, setLifelines] = useState({
     fiftyFifty: true,
@@ -92,29 +101,13 @@ export default function ShowQuiz() {
       router.push(`/results?prize=${prizeValues[currentQuestionIndex]}&result=win`)
     }
   }
-  function isSelectCorrect(value:Answer, index:number, array:Answer[]){
-    return (value.id == selectedAnswer) && value.isCorrect;
-  }
 
   const handleButtonClick = async () => {
     if (showingAnswer) {
       // If we're showing the answer, move to the next question
       if (currentQuestionIndex < questions.length - 1  && currentQuestionIndex < 14) {
-        let test = currentQuestion.answers.some(isSelectCorrect)
-        if(test){
-          if(doubleUsing){
-            setCurrentQuestionIndex(currentQuestionIndex + 2)  
-            setDoubleUsing(false)
-          }
-          else{
-            setCurrentQuestionIndex(currentQuestionIndex + 1)
-          }
-          setShowingAnswer(false)
-          setSelected(false)
-        }else{
-          router.push(`/results?prize=${prizeValues[currentQuestionIndex]}&result=lose`)
-        }
-        
+        setCurrentQuestionIndex(currentQuestionIndex + 1)
+        setShowingAnswer(false)
       } else {
         // Navigate to results page with all questions completed 
         handleShowResult();
@@ -187,7 +180,8 @@ export default function ShowQuiz() {
           })
           return
         }
-        setDoubleUsing(true)
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setShowingAnswer(false);
         break
     }
   }
@@ -271,9 +265,9 @@ export default function ShowQuiz() {
           </div>
 
           {/* Question and Answers */}
-          <div className="w-4/6 flex flex-col items-center justify-center p-4" style={{ marginTop: "10%" }}>
+          <div className="w-4/6 flex flex-col items-center justify-center p-4" style={{ marginTop: "5%" }}>
             <div className="bg-black/70 rounded-lg p-6 mb-6 max-w-3xl w-full">
-              <h2 className="text-xl font-bold text-center mb-8">Question {currentQuestionIndex + 1}  ( {currentQuestion.category} ) {doubleUsing? "X 2":""}</h2>
+              <h2 className="text-xl font-bold text-center mb-8">Question {currentQuestionIndex + 1}  ( {currentQuestion.category} )</h2>
               <p className="text-lg text-center mb-8">{currentQuestion.question}</p>
 
               <div className="grid grid-cols-2 gap-3">
@@ -284,11 +278,12 @@ export default function ShowQuiz() {
                   return (
                     <div
                       key={answer.id}
-                      className={`answer-option ${(showingAnswer && answer.isCorrect) ? "correct" : 
-                            (showingAnswer && answer.id == selectedAnswer && !answer.isCorrect)? "incorrect" : 
-                            (!showingAnswer && answer.id == selectedAnswer)? "selected" : ""} 
-                       ${isRemoved ? "opacity-0 pointer-events-none" : ""}`}
-                      onClick={() => {setSelectedAnswer(answer.id);setSelected(true)}}
+                      onClick={() => handleAnswerClick(answer)}
+                      className={`answer-option cursor-pointer
+                        ${showingAnswer && answer.isCorrect ? "correct" : ""}
+                        ${selectedAnswer && selectedAnswer.id === answer.id && !answer.isCorrect ? "wrong" : ""}
+                        ${removedAnswers.includes(Number(answer.id)) ? "opacity-0 pointer-events-none" : ""}
+                      `}
                     >
                       {letterLabel}: {answer.answer}
                     </div>
@@ -300,15 +295,11 @@ export default function ShowQuiz() {
 
           {/* Next or Walk away */}
           <div className="w-1/6 flex flex-col items-center justify-center pt-8">
-              {selected?
-              <Button onClick={handleButtonClick}>
-              {showingAnswer
-                ? currentQuestionIndex < 14
-                  ? "Next"
-                  : "Million$"
-                : "Answer"}
-              </Button>
-              :<></>}
+          {showingAnswer && (
+            <Button onClick={handleButtonClick}>
+              {currentQuestionIndex < 14 ? "Next" : "Finish"}
+            </Button>
+          )}
           </div>
         </div>
 
