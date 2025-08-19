@@ -8,7 +8,7 @@ This project demonstrates how to integrate the nextjs template with an sqlite ap
 Clone this repository to your local machine using the following command:
 
 ```bash
-git clone https://github.com/codarkcle/millionare-quiz-app.git
+git clone https://github.com/codarkle/millionare-quiz-app.git
 ```
 
 ## 2. Build and Run the Application
